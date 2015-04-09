@@ -1,2 +1,2 @@
 # pgmap
-Create maps from PostgreSQL data or PostGIS.
+Create maps from PostgreSQL/PostGIS data.
