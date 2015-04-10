@@ -44,3 +44,7 @@ Thumbs.db
 # Specific files #
 ##################
 config.cfg
+
+# Pycharm folder #
+##################
+.idea/
