@@ -21,6 +21,7 @@ class Cfg():
         # Retrieve PostgreSQL params
         self.pg_host = self.config_parser.get('PostgreSQL', 'host')
         self.pg_port = self.config_parser.get('PostgreSQL', 'port')
+        self.pg_db = self.config_parser.get('PostgreSQL', 'db')
         self.pg_lgn = self.config_parser.get('PostgreSQL', 'login')
         self.pg_pwd = self.config_parser.get('PostgreSQL', 'password')
 

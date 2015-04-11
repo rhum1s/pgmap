@@ -2,6 +2,7 @@
 
 [PostgreSQL]
 host: myPostgresqlHost
-port: 4532
+port: 5432
+db: dev
 login: myPostgresqlLogin
 password: myPostgresqlPassword
