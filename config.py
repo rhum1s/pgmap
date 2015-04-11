@@ -1,8 +1,6 @@
-#/usr/bin/python
 # config.py
 # R. Souweine, 2015
 
-import sys
 import ConfigParser
 
 
@@ -27,7 +25,5 @@ class Cfg():
 
 if __name__ == "__main__":
 
-    print "config.py - Running tests"
+    print "config.py - Running tests ..."
     cfg = Cfg("config.cfg")
-    cfg.show()
-
