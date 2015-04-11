@@ -19,6 +19,16 @@ class Pg():
         self.conn_string = "host=%s port=%s dbname=%s user=%s password=%s" % \
                            (cfg.pg_host, cfg.pg_port, cfg.pg_db, cfg.pg_lgn, cfg.pg_pwd)
 
+    def execute(self, sql):
+        """
+        Executes query in PostgreSQL.
+        """
+        # TODO: Seems to be able to exec multiple queries on one time.
+        # TODO: Be able to display outputs of execute queries.
+        con = pg.connect(self.conn_string)
+        psql.execute(sql, con)
+        con.close()
+
     def select(self, sql):
         """
         Execute the query and return result in Pandas Dataframe.
@@ -48,6 +58,7 @@ if __name__ == "__main__":
 
     # Avoid multiple connections test
     nb_conn1 = db.select("select sum(numbackends) as nb from pg_stat_database;").nb.values[0]
+    db.execute("drop table if exists toto; create temporary table toto (gid integer);")
     df = db.select("select gid, candidat, toponyme from bdcarthage.cours_d_eau limit 3;")
     gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 3;")
     nb_conn2 = db.select("select sum(numbackends) as nb from pg_stat_database;").nb.values[0]
