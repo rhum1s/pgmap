@@ -25,5 +25,14 @@ class Cfg():
 
 if __name__ == "__main__":
 
-    print "config.py - Running tests ..."
-    cfg = Cfg("config.cfg")
+    import os
+    import unittest
+
+    class TestFunctionsPg(unittest.TestCase):
+
+        print "Testing", os.path.basename(__file__)
+
+        def test_file_reading(self):
+            Cfg("config.cfg.example")
+
+    unittest.main()

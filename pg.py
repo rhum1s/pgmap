@@ -1,8 +1,6 @@
 # config.py
 # R. Souweine, 2015
 
-# TODO: Use unittest (http://sametmax.com/un-gros-guide-bien-gras-sur-les-tests-unitaires-en-python-partie-2/)
-
 import psycopg2 as pg
 import pandas.io.sql as psql
 import geopandas as gpd
@@ -27,12 +25,9 @@ class Pg():
         :param notices: Print PostgreSQL notices if there are.
         """
         con = pg.connect(self.conn_string)
-        try:
-            psql.execute(sql, con)
-            con.commit()
-            con.close()
-        except psql.DatabaseError, e:
-            print "ERROR", e
+        psql.execute(sql, con)
+        con.commit()
+        con.close()
         con.close()
 
         # If notices print it
@@ -46,7 +41,7 @@ class Pg():
         Connection is opened and closed each time.
         If SQL query contains errors, will return the SQL debug output.
         :param sql: The query
-        :return: Pandas Dataframe
+        :return: Pandas DataFrame
         """
         con = pg.connect(self.conn_string)
         dataframe = psql.read_sql(sql, con)
@@ -56,27 +51,55 @@ class Pg():
     def geo_select(self, sql, geom_col='geom'):
         """
         Like select function put also extract geometry in WKT thanks to GeoPandas.
+        :return: Pandas DataFrame
         """
         con = pg.connect(self.conn_string)
         geo_dataframe = gpd.read_postgis(sql, con, geom_col=geom_col)
         con.close()
         return geo_dataframe
 
+    @staticmethod
+    def nb_conn():
+        """
+        :return: Number of connections to the database.
+        """
+        return db.select("select sum(numbackends) as nb from pg_stat_database;").nb.values[0]
+
 if __name__ == "__main__":
-    print "pg.py - Running tests ..."
+
+    import os
+    import pandas as pd
+    import unittest
+
     db = Pg("config.cfg")
 
-    # Number of connections at start
-    nb_conn1 = db.select("select sum(numbackends) as nb from pg_stat_database;").nb.values[0]
+    class TestFunctionsPg(unittest.TestCase):
 
-    # NOTE: The next test will create table, not that good in another person database.
-    db.execute("drop table if exists toto; drop table if exists toto; create table public.toto(gid integer);", True)
-    df = db.select("select gid, candidat, toponyme from bdcarthage.cours_d_eau limit 3;")
-    gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 3;")
+        print "Testing", os.path.basename(__file__)
 
-    # Verify if each connections where closed
-    nb_conn2 = db.select("select sum(numbackends) as nb from pg_stat_database;").nb.values[0]
-    if nb_conn2 <= nb_conn1:
-        print "- Avoid multiple connections: Success (%s->%s)." % (nb_conn1, nb_conn2)
-    else:
-        print "ERROR: During test, not all connections where closed (%s->%s)." % (nb_conn1, nb_conn2)
+        def test_select(self):
+            df = db.select("select gid, candidat, toponyme from bdcarthage.cours_d_eau limit 3;")
+            self.assertIsInstance(df, pd.DataFrame)
+
+        def test_geo_select(self):
+            gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 3;")
+            self.assertIsInstance(gdf, pd.DataFrame)
+
+        def test_execute(self):
+            # NOTE: The next test will create table, not that good in another person database.
+            self.assertRaises(psql.DatabaseError, db.execute("""
+                drop table if exists public.pgmap_tests; create table public.pgmap_tests(gid integer);"""))
+
+        def test_nb_con(self):
+            nb_conn = db.nb_conn()
+            self.assertIsInstance(nb_conn, int)
+
+        def test_connections_closed(self):
+            nb_conn_start = db.nb_conn()
+            db.select("select gid, candidat, toponyme from bdcarthage.cours_d_eau limit 3;")
+            db.geo_select("select * from bdcarthage.cours_d_eau limit 3;")
+            nb_conn_end = db.nb_conn()
+            nb_conn_diff = nb_conn_start - nb_conn_end
+            self.assertEqual(nb_conn_diff, 0)
+
+    unittest.main()
