@@ -1,5 +1,6 @@
 # config.py
 # R. Souweine, 2015
+# FIXME: Tests relies on my own db. Maybe must create a test db?
 
 import psycopg2 as pg
 import pandas.io.sql as psql
@@ -51,10 +52,15 @@ class Pg():
     def geo_select(self, sql, geom_col='geom'):
         """
         Like select function put also extract geometry in WKT thanks to GeoPandas.
+        NOTE: Output geometry column is always renamed geom.
         :return: Pandas DataFrame
         """
         con = pg.connect(self.conn_string)
         geo_dataframe = gpd.read_postgis(sql, con, geom_col=geom_col)
+
+        if geom_col != "geom":
+            geo_dataframe.rename(columns={geom_col: "geom"}, inplace=True)
+
         con.close()
         return geo_dataframe
 
@@ -69,6 +75,7 @@ if __name__ == "__main__":
 
     import os
     import pandas as pd
+    import pandas.core.series
     import unittest
 
     db = Pg("config.cfg")
@@ -85,8 +92,11 @@ if __name__ == "__main__":
             gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 3;")
             self.assertIsInstance(gdf, pd.DataFrame)
 
+        def test_geo_select_geo_column(self):
+            gdf = db.geo_select("select * from inventaires_emissions.inventaire_objets limit 10", "the_geom")
+            self.assertIsInstance(gdf["geom"], pd.core.series.Series)
+
         def test_execute(self):
-            # NOTE: The next test will create table, not that good in another person database.
             self.assertRaises(psql.DatabaseError, db.execute("""
                 drop table if exists public.pgmap_tests; create table public.pgmap_tests(gid integer);"""))
 
