@@ -1,4 +1,4 @@
-# geo_df_utils.py
+# -*- coding:utf-8 -*-
 # R. Souweine, 2015
 
 # TODO: Function extracting X/Y from GeoDataFrame

@@ -1,4 +1,4 @@
-# run_tests.py
+# -*- coding:utf-8 -*-
 # R. Souweine, 2015
 
 import os

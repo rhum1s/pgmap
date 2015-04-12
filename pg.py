@@ -1,4 +1,4 @@
-# pg.py
+# -*- coding:utf-8 -*-
 # R. Souweine, 2015
 # FIXME: Tests relies on my own db. Maybe must create a test db?
 
