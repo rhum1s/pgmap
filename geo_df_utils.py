@@ -1,10 +1,6 @@
 # -*- coding:utf-8 -*-
 # R. Souweine, 2015
 
-# TODO: Function extracting X/Y from GeoDataFrame
-# NOTE: Geometry bounding box of a GEoDataFrame can be obtained from gdf.geometry.total_bounds
-# NOTE: To plot lines: gdf.geometry.plot()
-
 import sys
 
 
