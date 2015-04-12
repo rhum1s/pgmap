@@ -1,4 +1,4 @@
-# config.py
+# pg.py
 # R. Souweine, 2015
 # FIXME: Tests relies on my own db. Maybe must create a test db?
 
@@ -55,6 +55,7 @@ class Pg():
         NOTE: Output geometry column is always renamed geom.
         :return: Pandas DataFrame
         """
+        # NOTE: Geometry column name could have been find automatically with GeoDataFrame.geometry.name
         con = pg.connect(self.conn_string)
         geo_dataframe = gpd.read_postgis(sql, con, geom_col=geom_col)
 

@@ -1,4 +1,4 @@
-# config.py
+# run_tests.py
 # R. Souweine, 2015
 
 import os
