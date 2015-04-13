@@ -59,6 +59,7 @@ class Pg():
 
         if geom_col != "geom":
             geo_dataframe.rename(columns={geom_col: "geom"}, inplace=True)
+            geo_dataframe.set_geometry('geom', inplace=True)  # Must declare the new geometry field.
 
         con.close()
         return geo_dataframe
