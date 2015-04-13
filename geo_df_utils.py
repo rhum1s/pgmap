@@ -57,13 +57,31 @@ def projection(geo_data_frame, from_epsg, to_epsg):
     :param to_epsg: Output desired EPSG
     :return: GeoDataFrame
     """
-    geo_data_frame.crs = {'init': 'epsg:%s' % from_epsg, 'no_defs': True}
     geo_data_frame_projected = geo_data_frame.to_crs(epsg=to_epsg)
     geo_data_frame_projected.geom = geo_data_frame_projected.geometry
     geo_data_frame_projected.drop('geometry', 1, inplace=True)
     geo_data_frame_projected.set_geometry("geom", inplace=True)
 
     return geo_data_frame_projected
+
+
+def calculate_bbox(geo_data_frame):
+    """
+    :return: A list representing the bounding box
+    """
+    # FIXME: Have input crs
+    # FIXME: Does it work?
+    bbox = [180, 90, -180, -90]
+
+    # print geo_data_frame.crs
+    geo_data_frame = projection(geo_data_frame, 2154, 4326)
+    geo_data_frame_wgs84_bbox = geo_data_frame.total_bounds
+
+    bbox[0] = min(bbox[0], geo_data_frame_wgs84_bbox[0]) - 0.05
+    bbox[1] = min(bbox[1], geo_data_frame_wgs84_bbox[1]) - 0.05
+    bbox[2] = max(bbox[2], geo_data_frame_wgs84_bbox[2]) + 0.05
+    bbox[3] = max(bbox[3], geo_data_frame_wgs84_bbox[3]) + 0.05
+    print bbox
 
 
 if __name__ == "__main__":
@@ -73,6 +91,10 @@ if __name__ == "__main__":
     from pg import Pg
 
     db = Pg("config.cfg")
+
+    # gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 100;")
+    # calculate_bbox(gdf)
+    # sys.exit()
 
     class TestFunctionsPg(unittest.TestCase):
 
