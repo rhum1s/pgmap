@@ -10,7 +10,7 @@ def global_geometry_type(geo_data_frame):
     :param geo_data_frame: A pandas GeoDataFrame with geometry column named "geom"
     :return: Text.
     """
-    if len(gdf.geom_type.unique()) > 1:
+    if len(geo_data_frame.geom_type.unique()) > 1:
         sys.exit("ERROR: There are multiple geometries in the GeoDataFrame")
 
     geom_type = geo_data_frame.geom_type.unique()[0]
@@ -68,8 +68,31 @@ def projection(geo_data_frame, from_epsg, to_epsg):
 
 if __name__ == "__main__":
 
+    import os
+    import unittest
     from pg import Pg
 
     db = Pg("config.cfg")
-    gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 100;")
-    print global_geometry_type(gdf)
+
+    class TestFunctionsPg(unittest.TestCase):
+
+        print "Testing", os.path.basename(__file__)
+
+        def test_global_geometry_type(self):
+            gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 100;")
+            gdf_geometry_type = global_geometry_type(gdf)
+            self.assertEqual(gdf_geometry_type, "Line")
+
+        def test_extract_points_xy(self):
+            gdf = db.geo_select("select * from bdcarthage.point_eau_isole limit 3;", "the_geom")
+            x, y = extract_points_xy(gdf)
+            self.assertIsInstance(x, list)
+            self.assertIsInstance(y, list)
+
+        def test_projection(self):
+            gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 100;")
+            gdf = projection(gdf, 2154, 4326)
+            new_epsg = gdf.crs["init"]
+            self.assertEqual(new_epsg, "epsg:4326")
+
+    unittest.main()
