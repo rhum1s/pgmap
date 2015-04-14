@@ -12,3 +12,7 @@ gdf.geometry.total_bounds
 * Define it with gdf.crs = {'init': 'epsg:XXXX', 'no_defs': True}
 * And we do not need to define it when re-projecting (projection())
 * Problem: If this is  sub query? We can't find it's projection in the database.
+### Basemap projections
+* http://basemaptutorial.readthedocs.org/en/latest/projections.html
+* http://gis.stackexchange.com/questions/67764/forcing-lat-lon-bounding-box-to-appear-on-lcc-projection-map-in-matplotlib-basem
+* http://www.cimms.ou.edu/~lakshman/spatialprogramming/chapter03_basicgis/ch03_basicgis.pdf

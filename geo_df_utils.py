@@ -65,36 +65,35 @@ def projection(geo_data_frame, from_epsg, to_epsg):
     return geo_data_frame_projected
 
 
+def geo_dataframe_crs(geo_dataframe):
+    return geo_dataframe.crs['init'].replace("epsg:", "")
+
+
 def calculate_bbox(geo_data_frame):
     """
     :return: A list representing the bounding box
     """
-    # FIXME: Have input crs
-    # FIXME: Does it work?
+    # TODO: Must project coordinates one by one and not all the dataframe
     bbox = [180, 90, -180, -90]
 
-    # print geo_data_frame.crs
-    geo_data_frame = projection(geo_data_frame, 2154, 4326)
+    geo_data_frame = projection(geo_data_frame, geo_dataframe_crs(geo_data_frame), 4326)  # Convert to WGS84
     geo_data_frame_wgs84_bbox = geo_data_frame.total_bounds
 
     bbox[0] = min(bbox[0], geo_data_frame_wgs84_bbox[0]) - 0.05
     bbox[1] = min(bbox[1], geo_data_frame_wgs84_bbox[1]) - 0.05
     bbox[2] = max(bbox[2], geo_data_frame_wgs84_bbox[2]) + 0.05
     bbox[3] = max(bbox[3], geo_data_frame_wgs84_bbox[3]) + 0.05
-    print bbox
+    return bbox
 
 
 if __name__ == "__main__":
 
     import os
     import unittest
+    import numpy as np
     from pg import Pg
 
     db = Pg("config.cfg")
-
-    # gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 100;")
-    # calculate_bbox(gdf)
-    # sys.exit()
 
     class TestFunctionsPg(unittest.TestCase):
 
@@ -116,5 +115,25 @@ if __name__ == "__main__":
             gdf = projection(gdf, 2154, 4326)
             new_epsg = gdf.crs["init"]
             self.assertEqual(new_epsg, "epsg:4326")
+
+        def test_geo_dataframe_crs(self):
+            gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 100;")
+            self.assertIsInstance(geo_dataframe_crs(gdf), str)  # Must return string
+            self.assertIsInstance(int(geo_dataframe_crs(gdf)), int)  # With numbers only
+            self.assertEqual(len(geo_dataframe_crs(gdf)), 4)  # 4 characters length
+
+        def test_calculate_bbox(self):
+            gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 100;")
+            bbox = calculate_bbox(gdf)
+            self.assertIsInstance(bbox, list)
+            self.assertEqual(len(bbox), 4)
+            self.assertIsInstance(bbox[0], np.float64)
+            self.assertIsInstance(bbox[1], np.float64)
+            self.assertIsInstance(bbox[2], np.float64)
+            self.assertIsInstance(bbox[3], np.float64)
+            self.assertLessEqual(bbox[0], 180)  # Is it in WGS84 bounds
+            self.assertLessEqual(bbox[1], 90)  # Is it in WGS84 bounds
+            self.assertGreaterEqual(bbox[2], -180)  # Is it in WGS84 bounds
+            self.assertGreaterEqual(bbox[2], -90)  # Is it in WGS84 bounds
 
     unittest.main()
