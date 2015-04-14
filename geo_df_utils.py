@@ -45,7 +45,7 @@ def extract_points_xy(geo_data_frame):
     return x, y
 
 
-def projection(geo_data_frame, from_epsg, to_epsg):
+def projection(geo_data_frame, to_epsg):
     """
     GeoDataFrame projection.
     - Set default crs
@@ -53,7 +53,6 @@ def projection(geo_data_frame, from_epsg, to_epsg):
     - Pass the values of the new geometry field to the old one and delete the new
     - Declare again geometry field.
     :param geo_data_frame: A pandas GeoDataFrame with geometry column named "geom"
-    :param from_epsg: Input EPSG
     :param to_epsg: Output desired EPSG
     :return: GeoDataFrame
     """
@@ -65,10 +64,6 @@ def projection(geo_data_frame, from_epsg, to_epsg):
     return geo_data_frame_projected
 
 
-def geo_dataframe_crs(geo_dataframe):
-    return geo_dataframe.crs['init'].replace("epsg:", "")
-
-
 def calculate_bbox(geo_data_frame):
     """
     :return: A list representing the bounding box
@@ -76,7 +71,7 @@ def calculate_bbox(geo_data_frame):
     # TODO: Must project coordinates one by one and not all the dataframe
     bbox = [180, 90, -180, -90]
 
-    geo_data_frame = projection(geo_data_frame, geo_dataframe_crs(geo_data_frame), 4326)  # Convert to WGS84
+    geo_data_frame = projection(geo_data_frame, 4326)  # Convert to WGS84
     geo_data_frame_wgs84_bbox = geo_data_frame.total_bounds
 
     bbox[0] = min(bbox[0], geo_data_frame_wgs84_bbox[0]) - 0.05
@@ -112,15 +107,9 @@ if __name__ == "__main__":
 
         def test_projection(self):
             gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 100;")
-            gdf = projection(gdf, 2154, 4326)
+            gdf = projection(gdf, 4326)
             new_epsg = gdf.crs["init"]
             self.assertEqual(new_epsg, "epsg:4326")
-
-        def test_geo_dataframe_crs(self):
-            gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 100;")
-            self.assertIsInstance(geo_dataframe_crs(gdf), str)  # Must return string
-            self.assertIsInstance(int(geo_dataframe_crs(gdf)), int)  # With numbers only
-            self.assertEqual(len(geo_dataframe_crs(gdf)), 4)  # 4 characters length
 
         def test_calculate_bbox(self):
             gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 100;")
@@ -135,5 +124,5 @@ if __name__ == "__main__":
             self.assertLessEqual(bbox[1], 90)  # Is it in WGS84 bounds
             self.assertGreaterEqual(bbox[2], -180)  # Is it in WGS84 bounds
             self.assertGreaterEqual(bbox[2], -90)  # Is it in WGS84 bounds
-
+            
     unittest.main()
