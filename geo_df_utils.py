@@ -124,5 +124,5 @@ if __name__ == "__main__":
             self.assertLessEqual(bbox[1], 90)  # Is it in WGS84 bounds
             self.assertGreaterEqual(bbox[2], -180)  # Is it in WGS84 bounds
             self.assertGreaterEqual(bbox[2], -90)  # Is it in WGS84 bounds
-            
+
     unittest.main()
