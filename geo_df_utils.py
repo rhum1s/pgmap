@@ -24,20 +24,23 @@ def global_geometry_type(geo_data_frame):
         sys.exit("ERROR: Geometry type unknown: %s" % geom_type)
 
 
-def extract_points_xy(geo_data_frame):
+def extract_points_xy(geo_data_frame, epsg=None):
     """
     Very useful to work with Matplotlib / Basemap.
     :param geo_data_frame: A pandas GeoDataFrame with geometry column named "geom"
     :return: X list, Y list.
     """
-    if global_geometry_type(geo_data_frame) != "Point":
-        sys.exit("ERROR: Function extract_points_xy(geo_data_frame) only works with Points.")
-
     def getx(pt):
         return pt.coords[0][0]
 
     def gety(pt):
         return pt.coords[0][1]
+
+    if global_geometry_type(geo_data_frame) != "Point":
+        sys.exit("ERROR: Function extract_points_xy(geo_data_frame) only works with Points.")
+
+    if epsg is not None:  # If specified epsg we convert dataframe before extraction
+        geo_data_frame = projection(geo_data_frame, epsg)
 
     x = list(geo_data_frame.geometry.apply(getx))
     y = list(geo_data_frame.geometry.apply(gety))
@@ -102,6 +105,10 @@ if __name__ == "__main__":
         def test_extract_points_xy(self):
             gdf = db.geo_select("select * from bdcarthage.point_eau_isole limit 3;", "the_geom")
             x, y = extract_points_xy(gdf)
+            self.assertIsInstance(x, list)
+            self.assertIsInstance(y, list)
+            gdf = db.geo_select("select * from bdcarthage.point_eau_isole limit 3;", "the_geom")
+            x, y = extract_points_xy(gdf, 4326)
             self.assertIsInstance(x, list)
             self.assertIsInstance(y, list)
 
