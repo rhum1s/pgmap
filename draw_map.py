@@ -16,6 +16,7 @@
 """
 # TODO: Be able to plot multiple layers in one basemap plot.
 # TODO: Options for map background
+# TODO: Unittests
 
 import matplotlib
 matplotlib.use("WXagg")  # FIXME: Find platform? http://matplotlib.org/faq/usage_faq.html#what-is-a-backend
@@ -46,11 +47,31 @@ class PgMap():
     def map_background(the_map):
         the_map.drawcountries(linewidth=0.5, color='grey')
         the_map.drawcoastlines(linewidth=0.5, color='grey')
-        the_map.fillcontinents(color='lightgrey',lake_color='white', zorder=1, alpha=0.2)
-        the_map.shadedrelief(zorder=0, alpha=0.2)  # FIXME: Doesn't seems to work!
+        the_map.fillcontinents(color='lightgrey', lake_color='white', zorder=1, alpha=0.2)
+        the_map.shadedrelief(zorder=0, alpha=0.2)
 
-    # def map(self, sql, geom_field="geom", color="black", marker="o", size=18, title=u"", resolution="i", proj="lcc"):
-    def map(self, sql, geom_field="geom", color="red", border_color="black", line_width=.2, marker="o", size=18, title=u"", resolution="i", proj="lcc", zorder=2, alpha=0.5, fill=True):
+    def show(self, sql, geom_field="geom", colormap='binary', alpha=0.8):
+        """
+        Uses GeoPandas to show the data. No background.
+        :param sql:
+        :param geom_field:
+        :param colormap:
+        :param alpha:
+        :return:
+        """
+        # TODO: Default black color scheme
+        # TODO: Add choropleth
+        # TODO: If choropleth by default, set alpha to zero for polygons
+        # TODO: Color ramps choices list.
+
+        self.map_general()
+
+        geo_dataframe = self.db.geo_select(sql, geom_field)
+        geo_dataframe.plot(colormap=colormap, alpha=alpha)
+        plt.show()
+
+    def map(self, sql, geom_field="geom", color="red", border_color="black", line_width=.2, marker="o", size=18,
+            title=u"", resolution="i", proj="lcc", zorder=2, alpha=0.5, fill=True):
         geo_dataframe = self.db.geo_select(sql, geom_field)
         bbox = calculate_bbox(geo_dataframe)  # In WGS 84
         geom_type = global_geometry_type(geo_dataframe)
@@ -58,10 +79,12 @@ class PgMap():
         if geom_type == "Point":
             self.map_points(geo_dataframe, bbox, color, marker, size, title, resolution, proj)
             # FIXME: Repeated two times kwargs?
+            # FIXME: Simply remove this function and pass sql and bbox code to each function. (With geom verification)
         elif geom_type == "Line":
             print "ERROR: Function not already implemented"
         elif geom_type == "Polygon":
-            self.map_polygons(geo_dataframe, bbox, title, resolution, proj, color, border_color, line_width, zorder, alpha, fill)
+            self.map_polygons(geo_dataframe, bbox, title, resolution, proj, color, border_color, line_width, zorder,
+                              alpha, fill)
             # FIXME: Repeated two times kwargs?
 
     def map_points(self, geo_dataframe, bbox, color, marker, size, title, resolution, proj):
@@ -89,7 +112,8 @@ class PgMap():
         plt.title(title)
         plt.show()
 
-    def map_polygons(self, geo_dataframe, bbox, title, resolution, proj, color, border_color, zorder, line_width, alpha, fill):
+    def map_polygons(self, geo_dataframe, bbox, title, resolution, proj, color, border_color, zorder, line_width,
+                     alpha, fill):
         """
         Thanks to IEM Blog for the tip: http://iemblog.blogspot.fr/2011/06/simple-postgis-python-ogr-matplotlib.html.
         """
@@ -116,13 +140,13 @@ class PgMap():
             for polygon in obj.geoms:
                 # Grab polygon exterior coordinates with numpy.asarray
                 a = asarray(polygon.exterior)
-                x,y = the_map(a[:,0], a[:,1])
-                a = zip(x,y)
+                x, y = the_map(a[:, 0], a[:, 1])
+                a = zip(x, y)
                 p = Polygon(a, fc=color, ec=border_color, zorder=zorder, lw=line_width, alpha=alpha, fill=fill)
                 # label="tot"  # NOTE: Able to label polys?
                 patches.append(p)
 
-        ax = plt.axes([0,0,1,1])
+        ax = plt.axes([0, 0, 1, 1])
         self.map_background(the_map)
         ax.add_collection(PatchCollection(patches, match_original=True))
 
@@ -132,13 +156,13 @@ class PgMap():
 if __name__ == "__main__":
     pm = PgMap("config.cfg")
 
+    # Testing show data
+    # pm.show("select * from bdcarthage.point_eau_isole;", "the_geom")
+    pm.show("select * from bdcarthage.secteur;", "the_geom")
+
     # Test points with Basemap
     # pm.map("select * from bdcarthage.point_eau_isole;", "the_geom")
     # pm.map("select gid, st_transform(the_geom, 4326) as the_geom from bdcarthage.point_eau_isole;", "the_geom")
 
     # Est polygons with Basemap
-    pm.map("select * from bdcarthage.secteur;", "the_geom")
-
-
-
-
+    # pm.map("select * from bdcarthage.secteur;", "the_geom")
