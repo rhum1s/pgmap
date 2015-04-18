@@ -1,19 +1,6 @@
 # -*- coding:utf-8 -*-
 # R. Souweine, 2015
 
-# TODO: Simple functions using GeoPandas to plot every kind of data very fast.
-"""
-            geo_dataframe.plot(colormap='YlOrRd')
-            plt.show()
-
-            communes.plot(colormap='binary', alpha=0)
-            plt.show()
-
-            communes.plot(column='population', scheme='QUANTILES', k=8, colormap='Blues', alpha=1)
-            plt.show()
-
-            NOTE: Could only use it as it with a GeoDataFrame.
-"""
 # TODO: Be able to plot multiple layers in one basemap plot.
 # TODO: Options for map background
 # TODO: Unittests
@@ -50,24 +37,29 @@ class PgMap():
         the_map.fillcontinents(color='lightgrey', lake_color='white', zorder=1, alpha=0.2)
         the_map.shadedrelief(zorder=0, alpha=0.2)
 
-    def show(self, sql, geom_field="geom", colormap='binary', alpha=0.8):
+    @staticmethod
+    def show_colormaps():
+        print """
+        Colormaps for GeoPandas plots - PgMap.show():
+        binary
+        Blues
+        YlOrRd
+        ...
         """
-        Uses GeoPandas to show the data. No background.
-        :param sql:
-        :param geom_field:
-        :param colormap:
-        :param alpha:
-        :return:
-        """
-        # TODO: Default black color scheme
-        # TODO: Add choropleth
-        # TODO: If choropleth by default, set alpha to zero for polygons
-        # TODO: Color ramps choices list.
 
+    def show(self, sql, geom_field="geom", column=None, scheme="QUANTILES", k=8, colormap='binary', alpha=0.8):
+        """
+        Uses GeoPandas to show the data. No background but very fast maps.
+        Choropleth maps by default.
+        """
         self.map_general()
 
         geo_dataframe = self.db.geo_select(sql, geom_field)
-        geo_dataframe.plot(colormap=colormap, alpha=alpha)
+        if column is None:
+            alpha = 0.  # NOTE: Choropleth display by default. So alpha is set to zero
+            geo_dataframe.plot(colormap=colormap, alpha=alpha)
+        else:
+            geo_dataframe.plot(colormap=colormap, column=column, scheme=scheme, k=k, alpha=alpha)
         plt.show()
 
     def map(self, sql, geom_field="geom", color="red", border_color="black", line_width=.2, marker="o", size=18,
@@ -79,7 +71,6 @@ class PgMap():
         if geom_type == "Point":
             self.map_points(geo_dataframe, bbox, color, marker, size, title, resolution, proj)
             # FIXME: Repeated two times kwargs?
-            # FIXME: Simply remove this function and pass sql and bbox code to each function. (With geom verification)
         elif geom_type == "Line":
             print "ERROR: Function not already implemented"
         elif geom_type == "Polygon":
@@ -158,7 +149,11 @@ if __name__ == "__main__":
 
     # Testing show data
     # pm.show("select * from bdcarthage.point_eau_isole;", "the_geom")
-    pm.show("select * from bdcarthage.secteur;", "the_geom")
+    pm.show("select * from bdcarthage.troncon_hydrographique limit 1000;", "the_geom")
+    # pm.show("select * from bdcarthage.secteur;", "the_geom")
+    # pm.show("""
+    #     select id_geofla, population, the_geom as geom from geofla.commune_50 where code_reg = '93';
+    #     """, column="population")
 
     # Test points with Basemap
     # pm.map("select * from bdcarthage.point_eau_isole;", "the_geom")
