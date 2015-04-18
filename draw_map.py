@@ -3,6 +3,7 @@
 
 # TODO: Be able to plot multiple layers in one basemap plot.
 # TODO: Options for map background
+# TODO: Plot lines with basemap
 # TODO: Unittests
 
 import matplotlib
@@ -27,8 +28,24 @@ class PgMap():
         self.config_file = config_file
         self.db = Pg(self.config_file)
 
-    def map_general(self):
+    def map_general(self, bbox, resolution, proj):
+        """
+        Apply rcParams and creates the map object with a bounding box.
+        :param bbox: Bounding box of the GeoDataFrame to use.
+        :param resolution: "l", "i", "h" ...
+        :param proj: "lcc", ...
+        :return: A Basemap map object.
+        """
         plt.rcParams['figure.figsize'] = (self.map_width, self.map_height)
+
+        map_created = Basemap(llcrnrlon=bbox[0], llcrnrlat=bbox[1],
+                              urcrnrlon=bbox[2], urcrnrlat=bbox[3],
+                              resolution=resolution, projection=proj,
+                              lat_1=bbox[0], lon_0=bbox[2])
+        # NOTE: Works but why do we need to project in WGS 84 before?
+        # NOTE: Works but don't understand what means lat_1 and lon_0
+
+        return map_created
 
     @staticmethod
     def map_background(the_map):
@@ -79,19 +96,7 @@ class PgMap():
             # FIXME: Repeated two times kwargs?
 
     def map_points(self, geo_dataframe, bbox, color, marker, size, title, resolution, proj):
-        self.map_general()  # General map params
-
-        the_map = Basemap(llcrnrlon=bbox[0],
-                          llcrnrlat=bbox[1],
-                          urcrnrlon=bbox[2],
-                          urcrnrlat=bbox[3],
-                          resolution=resolution,
-                          projection=proj,
-                          lat_1=bbox[0],
-                          lon_0=bbox[2])
-        # NOTE: Works but why do we need to project in WGS 84 before?
-        # NOTE: Works but don't understand what means lat_1 and lon_0
-
+        the_map = self.map_general(bbox, resolution, proj)  # Creates the map
         self.map_background(the_map)  # Draw map background
 
         # Plot data
@@ -106,24 +111,14 @@ class PgMap():
     def map_polygons(self, geo_dataframe, bbox, title, resolution, proj, color, border_color, zorder, line_width,
                      alpha, fill):
         """
-        Thanks to IEM Blog for the tip: http://iemblog.blogspot.fr/2011/06/simple-postgis-python-ogr-matplotlib.html.
+        Thanks to IEM Blog for the tip:
+        http://iemblog.blogspot.fr/2011/06/simple-postgis-python-ogr-matplotlib.html.
         """
 
         if geo_dataframe.crs['init'] != "epsg:4326":  # GeoDataFrame must be in WGS84
             geo_dataframe = projection(geo_dataframe, 4326)
 
-        self.map_general()  # General map params
-        the_map = Basemap(llcrnrlon=bbox[0],
-                          llcrnrlat=bbox[1],
-                          urcrnrlon=bbox[2],
-                          urcrnrlat=bbox[3],
-                          resolution=resolution,
-                          projection=proj,
-                          lat_1=bbox[0],
-                          lon_0=bbox[2])
-        # NOTE: Works but why do we need to project in WGS 84 before?
-        # NOTE: Works but don't understand what means lat_1 and lon_0
-        # NOTE: We use it two times, maybe pass it to a function
+        the_map = self.map_general(bbox, resolution, proj)  # Creates the map
 
         # Create polygons patches
         patches = []
@@ -134,7 +129,6 @@ class PgMap():
                 x, y = the_map(a[:, 0], a[:, 1])
                 a = zip(x, y)
                 p = Polygon(a, fc=color, ec=border_color, zorder=zorder, lw=line_width, alpha=alpha, fill=fill)
-                # label="tot"  # NOTE: Able to label polys?
                 patches.append(p)
 
         ax = plt.axes([0, 0, 1, 1])
@@ -149,7 +143,7 @@ if __name__ == "__main__":
 
     # Testing show data
     # pm.show("select * from bdcarthage.point_eau_isole;", "the_geom")
-    pm.show("select * from bdcarthage.troncon_hydrographique limit 1000;", "the_geom")
+    # pm.show("select * from bdcarthage.troncon_hydrographique limit 1000;", "the_geom")
     # pm.show("select * from bdcarthage.secteur;", "the_geom")
     # pm.show("""
     #     select id_geofla, population, the_geom as geom from geofla.commune_50 where code_reg = '93';
@@ -160,4 +154,4 @@ if __name__ == "__main__":
     # pm.map("select gid, st_transform(the_geom, 4326) as the_geom from bdcarthage.point_eau_isole;", "the_geom")
 
     # Est polygons with Basemap
-    # pm.map("select * from bdcarthage.secteur;", "the_geom")
+    pm.map("select * from bdcarthage.secteur;", "the_geom")
