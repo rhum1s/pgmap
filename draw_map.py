@@ -1,10 +1,29 @@
 # -*- coding:utf-8 -*-
 # R. Souweine, 2015
 
+# TODO: Simple functions using GeoPandas to plot every kind of data very fast.
+"""
+            geo_dataframe.plot(colormap='YlOrRd')
+            plt.show()
+
+            communes.plot(colormap='binary', alpha=0)
+            plt.show()
+
+            communes.plot(column='population', scheme='QUANTILES', k=8, colormap='Blues', alpha=1)
+            plt.show()
+
+            NOTE: Could only use it as it with a GeoDataFrame.
+"""
+# TODO: Be able to plot multiple layers in one basemap plot.
+# TODO: Plot polygons
+
 import matplotlib
 matplotlib.use("WXagg")  # FIXME: Find platform? http://matplotlib.org/faq/usage_faq.html#what-is-a-backend
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
+from matplotlib.patches import Polygon
+from matplotlib.collections import PatchCollection
+from numpy import asarray
 from pg import Pg
 from geo_df_utils import calculate_bbox, extract_points_xy, projection, global_geometry_type
 
@@ -28,50 +47,161 @@ class PgMap():
         the_map.drawcountries(linewidth=0.5, color='grey')
         the_map.drawcoastlines(linewidth=0.5, color='grey')
         the_map.fillcontinents(color='lightgrey',lake_color='white', zorder=1, alpha=0.2)
-        # map.shadedrelief(zorder=0, alpha=0.2)  # FIXME: Doesn't seems to work!
+        the_map.shadedrelief(zorder=0, alpha=0.2)  # FIXME: Doesn't seems to work!
 
-    def map(self, sql, geom_field="geom"):
+    def map(self, sql, geom_field="geom", color="black", marker="o", size=18, title=u"", resolution="i", proj="lcc"):
         geo_dataframe = self.db.geo_select(sql, geom_field)
         bbox = calculate_bbox(geo_dataframe)  # In WGS 84
         geom_type = global_geometry_type(geo_dataframe)
 
         if geom_type == "Point":
-            self.map_points(geo_dataframe, bbox)
+            self.map_points(geo_dataframe, bbox, color, marker, size, title, resolution, proj)
+            # FIXME: Repeated two times kwargs?
         elif geom_type == "Line":
             print "ERROR: Function not already implemented"
         elif geom_type == "Polygon":
-            print "ERROR: Function not already implemented"
+            self.map_polygons(geo_dataframe, bbox, title, resolution, proj)
+            # FIXME: Repeated two times kwargs?
 
-    def map_points(self, geo_dataframe, bbox):
-            self.map_general()  # General map params
+    def map_points(self, geo_dataframe, bbox, color, marker, size, title, resolution, proj):
+        self.map_general()  # General map params
 
-            the_map = Basemap(llcrnrlon=bbox[0],
-                              llcrnrlat=bbox[1],
-                              urcrnrlon=bbox[2],
-                              urcrnrlat=bbox[3],
-                              resolution='i',
-                              projection='lcc',
-                              lat_1=bbox[0],
-                              lon_0=bbox[2])
-            # NOTE: Works but why do we need to project in WGS 84 before?
-            # NOTE: Works but don't understand what means lat_1 and lon_0
+        the_map = Basemap(llcrnrlon=bbox[0],
+                          llcrnrlat=bbox[1],
+                          urcrnrlon=bbox[2],
+                          urcrnrlat=bbox[3],
+                          resolution=resolution,
+                          projection=proj,
+                          lat_1=bbox[0],
+                          lon_0=bbox[2])
+        # NOTE: Works but why do we need to project in WGS 84 before?
+        # NOTE: Works but don't understand what means lat_1 and lon_0
 
-            self.map_background(the_map)  # Draw map background
+        self.map_background(the_map)  # Draw map background
 
-            # Plot data
-            x_coords, y_coords = extract_points_xy(geo_dataframe, 4326)  # NOTE: Needs to be in wgs84. Why?
-            x, y = the_map(x_coords, y_coords)
-            the_map.scatter(x, y, 18, marker='o', color='black', zorder=10)
+        # Plot data
+        x_coords, y_coords = extract_points_xy(geo_dataframe, 4326)  # NOTE: Needs to be in wgs84. Why?
+        x, y = the_map(x_coords, y_coords)
+        the_map.scatter(x, y, size, marker=marker, color=color, zorder=10)
 
-            # Add secondary information
-            plt.title('TITRE')
-            plt.show()
+        # Add secondary information
+        plt.title(title)
+        plt.show()
+
+    def map_polygons(self, geo_dataframe, bbox, title, resolution, proj):
+        """
+        Thanks to IEM Blog for the tip:
+        http://iemblog.blogspot.fr/2011/06/simple-postgis-python-ogr-matplotlib.html.
+        """
+
+        if geo_dataframe.crs['init'] != "epsg:4326":  # GeoDataFrame must be in WGS84
+            geo_dataframe = projection(geo_dataframe, 4326)
+
+        the_map = Basemap(llcrnrlon=bbox[0],
+                          llcrnrlat=bbox[1],
+                          urcrnrlon=bbox[2],
+                          urcrnrlat=bbox[3],
+                          resolution=resolution,
+                          projection=proj,
+                          lat_1=bbox[0],
+                          lon_0=bbox[2])
+        # NOTE: Works but why do we need to project in WGS 84 before?
+        # NOTE: Works but don't understand what means lat_1 and lon_0
+        # NOTE: We use it two times, maybe pass it to a function
+
+
+        # TODO: Pass params in function
+        color="grey"
+        border_color="black"
+        zorder=2
+        line_width=.2
+        alpha=0.5
+        fill=True
+
+        # Create polygons patches
+        patches = []
+        for obj in geo_dataframe.geometry.values:
+            for polygon in obj.geoms:
+                # Grab polygon exterior coordinates with numpy.asarray
+                a = asarray(polygon.exterior)
+                x,y = the_map(a[:,0], a[:,1])
+                a = zip(x,y)
+                p = Polygon(a, fc=color, ec=border_color, zorder=zorder, lw=line_width, alpha=alpha, fill=fill)
+                # label="tot"
+                patches.append(p)
+
+        # fig = plt.figure(num=None, figsize=(11.3,7.00))
+        ax = plt.axes([0,0,1,1], axisbg="lightblue")
+        zoom = 500
+        # the_map = Basemap(projection='lcc',lat_0=43.76,lon_0=6.33,width=zoom*zoom,height=zoom*zoom, resolution='l')
+        # polygones_patches = geodataframe_to_basemap(communes_wgs84, fill=True, alpha=0.8)  # NOTE: Already done
+        the_map.shadedrelief(zorder=0, alpha=0.8)
+        ax.add_collection(PatchCollection(patches, match_original=True))
+
+        plt.show()
+
+
+
+
+
+
+
+
+
+        # self.map_general()  # General map params
+        #
+        # fig = plt.figure(num=None, figsize=(11.3,7.00))  # FIXME: Where to place it?
+        # ax = plt.axes([0,0,1,1], axisbg="lightblue")  # FIXME: Where to place it?
+        #
+        # the_map = Basemap(llcrnrlon=bbox[0],
+        #                   llcrnrlat=bbox[1],
+        #                   urcrnrlon=bbox[2],
+        #                   urcrnrlat=bbox[3],
+        #                   resolution=resolution,
+        #                   projection=proj,
+        #                   lat_1=bbox[0],
+        #                   lon_0=bbox[2])
+        # # NOTE: Works but why do we need to project in WGS 84 before?
+        # # NOTE: Works but don't understand what means lat_1 and lon_0
+        #
+        # self.map_background(the_map)  # Draw map background
+        #
+        #
+        #
+        #
+        # color="grey"
+        # border_color="black"
+        # zorder=2
+        # line_width=.2
+        # alpha=1.0
+        # fill=True
+        #
+        # patches = []
+        # for obj in geo_dataframe.geometry.values:
+        #     for polygon in obj.geoms:
+        #         # Grap polygon exterior coordinates with numpy.asarray
+        #         a = asarray(polygon.exterior)
+        #         x,y = the_map(a[:,0], a[:,1])  # x,y = map(a[:,0], a[:,1])
+        #         a = zip(x,y)
+        #         p = Polygon(a, fc=color, ec=border_color, zorder=zorder, lw=line_width, alpha=alpha, fill=fill)
+        #         # label="tot"
+        #         patches.append(p)
+        #
+        # ax.add_collection(PatchCollection(patches, match_original=True))
+        #
+        #
+        # # Add secondary information
+        # plt.title(title)
+        # plt.show()
 
 pm = PgMap("config.cfg")
-pm.map("select * from bdcarthage.point_eau_isole;", "the_geom")
+
+# Test points with Basemap
+# pm.map("select * from bdcarthage.point_eau_isole;", "the_geom")
 # pm.map("select gid, st_transform(the_geom, 4326) as the_geom from bdcarthage.point_eau_isole;", "the_geom")
 
-
+# Est polygons with Basemap
+pm.map("select * from bdcarthage.secteur limit 10;", "the_geom")
 
 
 
