@@ -43,6 +43,9 @@ class PgMap():
         self.map_continents_alpha = 0.2
         self.map_shaded_relief = True
 
+        # Map files options
+        self.dpi = 100
+
     def reload_config(self, config_file):
         self.config_file = config_file
         self.db = Pg(self.config_file)
@@ -82,7 +85,8 @@ class PgMap():
         if self.map_shaded_relief is True:
             the_map.shadedrelief(zorder=0, alpha=0.2)
 
-    def show(self, sql, geom_field="geom", column=None, scheme="QUANTILES", k=8, colormap='binary', alpha=0.8):
+    def show(self, sql, geom_field="geom", column=None, scheme="QUANTILES", k=8, colormap='binary', alpha=0.8,
+             o_file=None):
         """
         Uses GeoPandas to show the data. No background but very fast maps.
         Choropleth maps by default.
@@ -95,23 +99,28 @@ class PgMap():
             geo_dataframe.plot(colormap=colormap, alpha=alpha)
         else:
             geo_dataframe.plot(colormap=colormap, column=column, scheme=scheme, k=k, alpha=alpha)
-        plt.show()
+
+        if o_file is None:
+            plt.show()
+        else:
+            plt.savefig(o_file, dpi=self.dpi, bbox_inches='tight')
 
     def map(self, sql, geom_field="geom", color="black", border_color="black", line_width=1., marker="o", size=18,
-            title=u"", resolution="i", proj="lcc", zorder=10, alpha=1., fill=False):
+            title=u"", resolution="i", proj="lcc", zorder=10, alpha=1., fill=False, o_file=None):
         geo_dataframe = self.db.geo_select(sql, geom_field)
         bbox = calculate_bbox(geo_dataframe)  # In WGS 84
         geom_type = global_geometry_type(geo_dataframe)
 
         if geom_type == "Point":
-            self.map_points(geo_dataframe, bbox, color, marker, size, title, resolution, proj)  # NOTE: **kwargs?
+            self.map_points(geo_dataframe, bbox, color, marker, size, title, resolution, proj, o_file)
+            # NOTE: **kwargs?
         elif geom_type == "Line":
             print "ERROR: Function not already implemented"
         elif geom_type == "Polygon":
             self.map_polygons(geo_dataframe, bbox, title, resolution, proj, color, border_color, zorder, line_width,
-                              alpha, fill)  # NOTE: **kwargs?
+                              alpha, fill, o_file)  # NOTE: **kwargs?
 
-    def map_points(self, geo_dataframe, bbox, color, marker, size, title, resolution, proj):
+    def map_points(self, geo_dataframe, bbox, color, marker, size, title, resolution, proj, o_file):
         the_map = self.map_general(bbox, resolution, proj)  # Creates the map
         self.map_background(the_map)  # Draw map background
 
@@ -122,10 +131,14 @@ class PgMap():
 
         # Add secondary information
         plt.title(title)
-        plt.show()
+
+        if o_file is None:
+            plt.show()
+        else:
+            plt.savefig(o_file, dpi=self.dpi, bbox_inches='tight')
 
     def map_polygons(self, geo_dataframe, bbox, title, resolution, proj, color, border_color, zorder, line_width,
-                     alpha, fill):
+                     alpha, fill, o_file):
         """
         Thanks to IEM Blog for the tip:
         http://iemblog.blogspot.fr/2011/06/simple-postgis-python-ogr-matplotlib.html.
@@ -151,7 +164,11 @@ class PgMap():
         ax.add_collection(PatchCollection(patches, match_original=True))
 
         plt.title(title)
-        plt.show()
+
+        if o_file is None:
+            plt.show()
+        else:
+            plt.savefig(o_file, dpi=self.dpi, bbox_inches='tight')
 
 if __name__ == "__main__":
 
@@ -183,6 +200,7 @@ if __name__ == "__main__":
             self.assertIsInstance(pm.map_continents_color_lake, str)
             self.assertIsInstance(pm.map_continents_alpha, float)
             self.assertIsInstance(pm.map_shaded_relief, bool)
+            self.assertIsInstance(pm.dpi, int)
 
         def test_reload_config_file(self):
             pm = PgMap("config.cfg")
@@ -215,7 +233,7 @@ if __name__ == "__main__":
     unittest.main()
 
     # pm = PgMap("config.cfg")
-
+    #
     # # Testing show data
     # pm.show("select * from bdcarthage.point_eau_isole;", "the_geom")
     # pm.show("select * from bdcarthage.troncon_hydrographique limit 1000;", "the_geom")
@@ -224,9 +242,14 @@ if __name__ == "__main__":
     #     select id_geofla, population, the_geom as geom from geofla.commune_50 where code_reg = '93';
     #     """, column="population")
     #
+    # Testing show data saving file
+    # pm.show("select * from bdcarthage.point_eau_isole;", "the_geom", o_file="aa.png")
     # # Test points with Basemap
     # pm.map("select * from bdcarthage.point_eau_isole;", "the_geom")
     # pm.map("select gid, st_transform(the_geom, 4326) as the_geom from bdcarthage.point_eau_isole;", "the_geom")
+    #
+    # # Testing points in basemap saving file
+    # pm.map("select * from bdcarthage.point_eau_isole;", "the_geom", o_file="bb.png")
     #
     # # Test polygons with Basemap
     # pm.map("select * from bdcarthage.secteur;", "the_geom")
