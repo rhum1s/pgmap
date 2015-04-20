@@ -1,16 +1,13 @@
 # -*- coding:utf-8 -*-
 # R. Souweine, 2015
 
-# TODO: Unittests
-
 import matplotlib
-matplotlib.use("WXagg")  # FIXME: Find platform? http://matplotlib.org/faq/usage_faq.html#what-is-a-backend
+matplotlib.use("WXagg")
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
 from numpy import asarray
-from pg import Pg
 from geo_df_utils import calculate_bbox, extract_points_xy, projection, global_geometry_type
 
 
@@ -157,7 +154,67 @@ class PgMap():
         plt.show()
 
 if __name__ == "__main__":
-    pm = PgMap("config.cfg")
+
+    import os
+    import unittest
+    from pg import Pg
+
+    class TestFunctions(unittest.TestCase):
+
+        print "Testing", os.path.basename(__file__)
+
+        def test_pgmap_object_creation(self):
+            pm = PgMap("config.cfg")
+            self.assertIsInstance(pm.config_file, str)
+            self.assertIsInstance(pm.db, Pg)
+            self.assertIsInstance(pm.map_width, float)
+            self.assertGreaterEqual(pm.map_width, 0.1)
+            self.assertIsInstance(pm.map_height, float)
+            self.assertGreaterEqual(pm.map_height, 0.1)
+            self.assertIsInstance(pm.map_countries, bool)
+            self.assertIsInstance(pm.map_countries_boundary_color, str)
+            self.assertIsInstance(pm.map_countries_boundary_width, float)
+            self.assertIsInstance(pm.map_coastlines, bool)
+            self.assertIsInstance(pm.map_coastlines_width, float)
+            self.assertIsInstance(pm.map_coastlines_color, str)
+            self.assertIsInstance(pm.map_fill_continents, bool)
+            self.assertIsInstance(pm.map_coastlines_color, str)
+            self.assertIsInstance(pm.map_continents_color, str)
+            self.assertIsInstance(pm.map_continents_color_lake, str)
+            self.assertIsInstance(pm.map_continents_alpha, float)
+            self.assertIsInstance(pm.map_shaded_relief, bool)
+
+        def test_reload_config_file(self):
+            pm = PgMap("config.cfg")
+            pm.reload_config("config.cfg")
+            self.test_pgmap_object_creation()
+
+        def test_map_general(self):
+            pm = PgMap("config.cfg")
+            pm.map_general([1, 2, 3, 4], "i", "lcc")
+            self.assertIsInstance(plt.rcParams['figure.figsize'], list)
+            self.assertEqual(len(plt.rcParams['figure.figsize']), 2)
+            self.assertIsInstance(plt.rcParams['figure.figsize'][0], float)
+            self.assertIsInstance(plt.rcParams['figure.figsize'][1], float)
+
+        def test_map_background(self):
+            pass  # TODO: How to do unittests?
+
+        def test_show(self):
+            pass  # TODO: How to do unittests?
+
+        def test_map(self):
+            pass  # TODO: How to do unittests?
+
+        def test_map_points(self):
+            pass  # TODO: How to do unittests?
+
+        def test_map_polygons(self):
+            pass  # TODO: How to do unittests?
+
+    unittest.main()
+
+    # pm = PgMap("config.cfg")
 
     # # Testing show data
     # pm.show("select * from bdcarthage.point_eau_isole;", "the_geom")
