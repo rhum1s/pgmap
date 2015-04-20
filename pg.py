@@ -57,9 +57,15 @@ class Pg():
         con = pg.connect(self.conn_string)
         geo_dataframe = gpd.read_postgis(sql, con, geom_col=geom_col)
 
+        # Rename geometry column
         if geom_col != "geom":
             geo_dataframe.rename(columns={geom_col: "geom"}, inplace=True)
             geo_dataframe.set_geometry('geom', inplace=True)  # Must declare the new geometry field.
+
+        # Find the srid of the geometry field and define it in the GeoDataFrame
+        sql2 = "select ST_SRID(%s) from (%s) as a limit 1;" % (geom_col, sql.replace(";", ""))
+        srid = psql.read_sql(sql2, con).values[0][0]
+        geo_dataframe.crs = {'init': 'epsg:%s' % srid, 'no_defs': True}
 
         con.close()
         return geo_dataframe
@@ -91,6 +97,8 @@ if __name__ == "__main__":
         def test_geo_select(self):
             gdf = db.geo_select("select * from bdcarthage.cours_d_eau limit 3;")
             self.assertIsInstance(gdf, pd.DataFrame)
+            self.assertIsInstance(gdf.crs["init"], str)  # SRID (crs) must be defined and string
+            self.assertEqual(len(gdf.crs["init"]), 9)  # SRID must be 9 char length (epsg:XXXX)
 
         def test_geo_select_geo_column(self):
             gdf = db.geo_select("select * from inventaires_emissions.inventaire_objets limit 10", "the_geom")

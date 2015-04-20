@@ -11,6 +11,7 @@
 # Config files #
 ################
 *.cfg
+*.xml
  
 # Packages #
 ############
@@ -44,6 +45,7 @@ Thumbs.db
 # Specific files #
 ##################
 config.cfg
+tests.py
 
 # Pycharm folder #
 ##################
