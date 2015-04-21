@@ -2,6 +2,7 @@
 # R. Souweine, 2015
 
 import psycopg2 as pg
+from psycopg2.extensions import AsIs
 import pandas.io.sql as psql
 import geopandas as gpd
 from config import Cfg
@@ -63,8 +64,9 @@ class Pg():
             geo_dataframe.set_geometry('geom', inplace=True)  # Must declare the new geometry field.
 
         # Find the srid of the geometry field and define it in the GeoDataFrame
-        sql2 = "select ST_SRID(%s) from (%s) as a limit 1;" % (geom_col, sql.replace(";", ""))
-        srid = psql.read_sql(sql2, con).values[0][0]
+        sql2 = "select ST_SRID(%(geom_column)s) from (%(original_query)s) as a limit 1;"
+        data = {"geom_column": AsIs(geom_col), "original_query": AsIs(sql.replace(";", ""))}
+        srid = psql.read_sql(sql2, con, params=data).values[0][0]
         geo_dataframe.crs = {'init': 'epsg:%s' % srid, 'no_defs': True}
 
         con.close()
