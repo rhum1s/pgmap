@@ -14,7 +14,8 @@ First Create a config file from config.cfg.example
 pm = PgMap("config.cfg")
 
 # Quick plot with no background plots
-pm.show("select * from schema.geo_table;")  # Can include geometry field name and output file to save plot.
+pm.show("select * from schema.geo_table;") 
+# Can include geometry field name and output file to save plot.
 
 # Plot with background using Basemap
 pm.map("select * from schema.geo_table;")
