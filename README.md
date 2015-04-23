@@ -8,7 +8,7 @@ It uses lot of libraries like GeoPandas, Matplotlib, ... Thanks to their authors
 Required packages has intentionally not been packed in this setup as I think it's quite intrusive for the user (note that it's my first Python packaging so maybe I misunderstood something).   
 
 ## Installation:
-Dépendencies: unittest, matplotlib, mpl_toolkits.basemap, numpy, psycopg2, pandas, geopandas     
+Dependencies: unittest, matplotlib, mpl_toolkits.basemap, numpy, psycopg2, pandas, geopandas     
 python setup.py install  
 
 ## Usage:   
