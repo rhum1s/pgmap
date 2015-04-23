@@ -14,6 +14,8 @@ python setup.py install
 ## Usage:   
 First Create a config file from config.cfg.example  
 ```
+from pgmap import PgMap
+
 pm = PgMap("config.cfg")
 
 # Quick plot with no background plots
