@@ -21,7 +21,7 @@ setup(
     description='Plot map from the result of PostgreSQL queries.',
     long_description=readme(),
     classifiers=[
-        'Development Status :: Beta',
+        'Development Status :: Alpha',
         'License :: OSI Approved :: GNU',
         'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering :: Visualization',
