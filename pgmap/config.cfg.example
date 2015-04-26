@@ -1,0 +1,8 @@
+# Configuration file
+
+[PostgreSQL]
+host: myPostgresqlHost
+port: 5432
+db: dev
+login: myPostgresqlLogin
+password: myPostgresqlPassword
