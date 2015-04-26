@@ -8,6 +8,7 @@ from mpl_toolkits.basemap import Basemap
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
 from numpy import asarray
+from .pg import Pg  # FIXME: PyCharm declares it not used but we need it while using module
 from geo_df_utils import calculate_bbox, extract_points_xy, projection, global_geometry_type
 
 

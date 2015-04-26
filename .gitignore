@@ -50,3 +50,9 @@ tests.py
 # Pycharm folder #
 ##################
 .idea/
+dist/
+/dist/
+/*.egg-info
+/*.egg
+*.egg-info
+*.egg
