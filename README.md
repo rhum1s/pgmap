@@ -35,4 +35,3 @@ pm.map_countries_boundary_width = 3
 pm.map_coastlines_width = 3
 pm.map_coastlines_color = "yellow"
 pm.map("select * from schema.geo_table;", "the_geom", fill=False)
-```
