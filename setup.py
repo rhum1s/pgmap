@@ -1,8 +1,5 @@
 # -*- coding:utf-8 -*-
 # R. Souweine, 2015
-#
-# Required packages has intentionally not been packed in this setup as I think it's quite intrusive for the user:
-# [unittest, matplotlib, mpl_toolkits.basemap, numpy, psycopg2, pandas, geopandas]
 
 from setuptools import setup
 
@@ -11,13 +8,20 @@ def readme():
     with open('README.md') as f:
         return f.read()
 
+
+def grep_version():
+    with open('pgmap/__init__.py') as f:
+        for line in f.readlines():
+            if line.startswith('__version__'):
+                return line.split("=")[1].replace(" ", "").replace("\n", "").replace('"', "")
+
 setup(
     name='pgmap',
-    version='0.0.1-beta',
+    version=grep_version(),  # version='0.0.1b0',
     description='Plot map from the result of PostgreSQL queries.',
     long_description=readme(),
     classifiers=[
-        'Development Status :: 0.0.1 - Beta',
+        'Development Status :: Beta',
         'License :: OSI Approved :: GNU',
         'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering :: Visualization',
@@ -29,4 +33,11 @@ setup(
     license='GNU',
     packages=['pgmap'],
     include_package_data=True,
+    install_requires=[
+        "psycopg2",
+        "pandas",
+        "geopandas",
+        "matplotlib",
+        "numpy"
+    ],
     zip_safe=False)
